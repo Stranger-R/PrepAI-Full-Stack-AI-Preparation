@@ -55,6 +55,9 @@ async function userRegisterController(req, res) {
 
         const { otp } = OTPGenerate.generateOTP();
         
+        // Log OTP to server console so developer can copy it from logs if SMTP fails
+        console.log(`[DEV_OTP_LOG] Generated OTP for ${email}: ${otp}`);
+        
         const html = OTPGenerate.verificationEmailTemplate(
             username,
             otp
@@ -71,11 +74,12 @@ async function userRegisterController(req, res) {
             otpHash
         });
 
-        await emailService.sendEmail({
+        // Run email sending in background (don't await) so SMTP timeout doesn't hang the registration API
+        emailService.sendEmail({
             to: email,
             subject: "Verify Your Email Address",
             html: html
-        });
+        }).catch(err => console.error("Async email error:", err));
 
         return res.status(201).json({
             success: true,
