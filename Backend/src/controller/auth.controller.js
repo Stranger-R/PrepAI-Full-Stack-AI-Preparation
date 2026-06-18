@@ -187,8 +187,13 @@ async function userLoginController(req, res) {
             userAgent: req.headers["user-agent"]
         });
 
-        // Set cookie
-        res.cookie("token", token);
+        // Set cookie with cross-origin support (sameSite: none, secure: true)
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: 24 * 60 * 60 * 1000 // 1 day
+        });
 
         return res.status(200).json({
             message: "User LoggedIn Successfully",
@@ -219,7 +224,11 @@ async function userLogoutController(req, res) {
             });
         }
 
-        res.clearCookie('token');
+        res.clearCookie('token', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none'
+        });
 
         await tokenBlackListModel.create({
             token : token
@@ -357,7 +366,12 @@ async function verifyEmail(req, res) {
         });
 
 
-        res.cookie("token", token);
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: 24 * 60 * 60 * 1000 // 1 day
+        });
 
 
         return res.status(200).json({
