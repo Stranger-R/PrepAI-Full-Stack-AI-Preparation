@@ -312,7 +312,7 @@ async function verifyEmail(req, res) {
                 verified: true,
             },
             {
-                new: true
+                returnDocument: 'after'
             }
         );
 
