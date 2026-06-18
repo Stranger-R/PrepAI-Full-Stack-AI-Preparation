@@ -1,4 +1,4 @@
-const { PDFParse } = require('pdf-parse');
+const pdf = require('pdf-parse');
 const {generateInterviewReport, generateResumePdf} = require('../Services/ai.service');
 const InterviewReportModel = require('../models/interviewReport.model');
 
@@ -7,13 +7,13 @@ async function generateInterviewReportController(req, res) {
         return res.status(400).json({ message: 'Resume file is required' });
     }
 
-    const parser = new PDFParse({ data: req.file.buffer });
     let resumeText = '';
     try {
-        const resumeData = await parser.getText();
+        const resumeData = await pdf(req.file.buffer);
         resumeText = resumeData.text;
-    } finally {
-        await parser.destroy();
+    } catch (parseError) {
+        console.error("PDF Parse Error:", parseError);
+        return res.status(400).json({ message: 'Failed to parse resume PDF file' });
     }
 
     const { selfDescription, jobDescription } = req.body;
