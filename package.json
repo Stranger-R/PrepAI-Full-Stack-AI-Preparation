@@ -1,0 +1,17 @@
+{
+  "name": "ai-interview-master",
+  "version": "1.0.0",
+  "description": "AI Mock Interview Prep & Tailored Resume PDF Generator Platform",
+  "private": true,
+  "scripts": {
+    "setup": "npm install && npm install --prefix Backend && npm install --prefix Frontend",
+    "dev:backend": "npm run dev --prefix Backend",
+    "dev:frontend": "npm run dev --prefix Frontend",
+    "dev": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:frontend": "npm run build --prefix Frontend",
+    "build": "npm run build:frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
+  }
+}
