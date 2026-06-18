@@ -1,4 +1,4 @@
-const pdf = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 const {generateInterviewReport, generateResumePdf} = require('../Services/ai.service');
 const InterviewReportModel = require('../models/interviewReport.model');
 
@@ -8,34 +8,46 @@ async function generateInterviewReportController(req, res) {
     }
 
     let resumeText = '';
+    const parser = new PDFParse({ data: req.file.buffer });
     try {
-        const resumeData = await pdf(req.file.buffer);
+        const resumeData = await parser.getText();
         resumeText = resumeData.text;
     } catch (parseError) {
         console.error("PDF Parse Error:", parseError);
         return res.status(400).json({ message: 'Failed to parse resume PDF file' });
+    } finally {
+        await parser.destroy();
     }
 
     const { selfDescription, jobDescription } = req.body;
 
-    const interViewReportByAi = await generateInterviewReport({
-        resume: resumeText,
-        selfDescription,
-        jobDescription,
-    })
+    try {
+        const interViewReportByAi = await generateInterviewReport({
+            resume: resumeText,
+            selfDescription,
+            jobDescription,
+            
+        });
 
-    const interviewReport = await InterviewReportModel.create({
-        user: req.user.id,
-        resume: resumeText,
-        selfDescription,
-        jobDescription,
-        ...interViewReportByAi,
-    })
+        const interviewReport = await InterviewReportModel.create({
+            user: req.user.id,
+            resume: resumeText,
+            selfDescription,
+            jobDescription,
+            ...interViewReportByAi,
+        });
 
-    return res.status(201).json({
-        message : "Interview report generated successfully",
-        interviewReport
-    })
+        return res.status(201).json({
+            message : "Interview report generated successfully",
+            interviewReport
+        });
+    } catch (error) {
+        console.error("AI Generation or Database Error:", error);
+        return res.status(500).json({
+            message: "Failed to generate interview strategy. Please check server logs.",
+            error: error.message
+        });
+    }
 }
 
 
