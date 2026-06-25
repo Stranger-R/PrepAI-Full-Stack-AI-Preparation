@@ -1,0 +1,348 @@
+// Variables
+$bg-page: #0d1117;
+$bg-card: #161b22;
+$bg-panel: #1c2230;
+$border-color: #2a3348;
+$text-primary: #e6edf3;
+$text-muted: #7d8590;
+$accent: #ff2d78;
+$cyan-accent: #00f2fe;
+$purple-accent: #a78bfa;
+
+.loading-screen-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: $bg-page;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+// Background glows
+.bg-glow {
+    position: absolute;
+    width: 450px;
+    height: 450px;
+    border-radius: 50%;
+    filter: blur(140px);
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 1;
+    animation: pulse-glow 8s ease-in-out infinite alternate;
+
+    &--accent {
+        background: radial-gradient(circle, $accent 0%, transparent 70%);
+        top: -100px;
+        left: -100px;
+    }
+
+    &--cyan {
+        background: radial-gradient(circle, $cyan-accent 0%, transparent 70%);
+        bottom: -100px;
+        right: -100px;
+        animation-delay: -4s;
+    }
+}
+
+// Main Card
+.loading-card {
+    position: relative;
+    z-index: 10;
+    width: 90%;
+    max-width: 480px;
+    padding: 3rem 2.5rem;
+    background: rgba($bg-card, 0.75);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba($border-color, 0.6);
+    border-radius: 1.25rem;
+    box-shadow: 
+        0 24px 60px rgba(0, 0, 0, 0.5),
+        0 0 40px rgba($accent, 0.03);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 2.25rem;
+    animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+// Logo Spinner Section
+.loading-card__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.logo-spinner {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinner-outer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: $accent;
+    border-right-color: rgba($accent, 0.1);
+    border-bottom-color: $accent;
+    border-left-color: rgba($accent, 0.1);
+    animation: spin-clockwise 2s linear infinite;
+}
+
+.spinner-inner {
+    position: absolute;
+    width: calc(100% - 12px);
+    height: calc(100% - 12px);
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: $cyan-accent;
+    border-right-color: rgba($cyan-accent, 0.1);
+    border-bottom-color: $cyan-accent;
+    border-left-color: rgba($cyan-accent, 0.1);
+    animation: spin-counter 1.5s linear infinite;
+}
+
+.spinner-core {
+    width: 48px;
+    height: 48px;
+    background: radial-gradient(circle, rgba($accent, 0.15) 0%, transparent 80%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-spark {
+    width: 24px;
+    height: 24px;
+    color: $accent;
+    filter: drop-shadow(0 0 6px rgba($accent, 0.6));
+    animation: pulse-icon 1.5s ease-in-out infinite alternate;
+}
+
+.loading-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: $text-primary;
+    margin: 0;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+}
+
+.loading-subtitle {
+    font-size: 0.875rem;
+    color: $text-muted;
+    margin: 0;
+    line-height: 1.5;
+    max-width: 360px;
+}
+
+// Checklist Items
+.loading-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    text-align: left;
+    background: rgba($bg-panel, 0.4);
+    border: 1px solid rgba($border-color, 0.4);
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+}
+
+.loading-step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+
+    &__label {
+        font-size: 0.875rem;
+        color: $text-muted;
+        transition: color 0.3s ease;
+    }
+
+    &__indicator {
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .step-empty-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: rgba($text-muted, 0.3);
+    }
+
+    .step-pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: $cyan-accent;
+        box-shadow: 0 0 10px rgba($cyan-accent, 0.8);
+        animation: scale-pulse 1.2s infinite ease-in-out;
+    }
+
+    .step-check-icon {
+        width: 14px;
+        height: 14px;
+        color: #3fb950;
+        filter: drop-shadow(0 0 3px rgba(#3fb950, 0.4));
+    }
+
+    // Status modifications
+    &--completed {
+        .loading-step__label {
+            color: rgba($text-primary, 0.65);
+            text-decoration: line-through;
+            text-decoration-color: rgba($text-muted, 0.4);
+        }
+    }
+
+    &--active {
+        .loading-step__label {
+            color: $text-primary;
+            font-weight: 500;
+        }
+    }
+
+    &--pending {
+        opacity: 0.55;
+    }
+}
+
+// Progress Bar Section
+.progress-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.progress-bar-wrapper {
+    width: 100%;
+    height: 6px;
+    background-color: $bg-panel;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba($border-color, 0.5);
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, $accent 0%, $purple-accent 50%, $cyan-accent 100%);
+    background-size: 200% auto;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba($accent, 0.5);
+    animation: gradient-shift 3s linear infinite;
+}
+
+.progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.775rem;
+    color: $text-muted;
+    font-weight: 500;
+
+    .progress-status {
+        color: $text-muted;
+        max-width: 250px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .progress-percentage {
+        color: $text-primary;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+// Simple loader wrapper (for faster fetches)
+.simple-loader-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 0;
+}
+
+.simple-loader-dots {
+    display: flex;
+    gap: 0.4rem;
+
+    .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: $accent;
+        animation: loader-dots 1.2s infinite ease-in-out both;
+
+        &:nth-child(1) { animation-delay: -0.32s; }
+        &:nth-child(2) { animation-delay: -0.16s; }
+    }
+}
+
+.simple-loader-text {
+    font-size: 0.85rem;
+    color: $text-muted;
+    margin: 0;
+}
+
+// ── Animations ────────────────────────────────────────────────────────────────
+@keyframes spin-clockwise {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes spin-counter {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(-360deg); }
+}
+
+@keyframes pulse-icon {
+    0% { transform: scale(0.9); opacity: 0.85; }
+    100% { transform: scale(1.1); opacity: 1; }
+}
+
+@keyframes scale-pulse {
+    0%, 100% { transform: scale(0.8); opacity: 0.5; }
+    50% { transform: scale(1.3); opacity: 1; }
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse-glow {
+    0% { transform: scale(1); opacity: 0.12; }
+    100% { transform: scale(1.2); opacity: 0.22; }
+}
+
+@keyframes fade-in-up {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes loader-dots {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1.0); }
+}

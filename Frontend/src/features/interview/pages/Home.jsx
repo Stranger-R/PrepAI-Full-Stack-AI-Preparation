@@ -3,6 +3,7 @@ import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../../auth/hooks/useAuth.js'
+import LoadingScreen from '../components/LoadingScreen.jsx'
 
 const Home = () => {
 
@@ -12,6 +13,7 @@ const Home = () => {
     const [selfDescription, setSelfDescription] = useState("")
     const [selectedFile, setSelectedFile] = useState(null)
     const [dragActive, setDragActive] = useState(false)
+    const [isGenerating, setIsGenerating] = useState(false)
     const resumeInputRef = useRef()
 
     const navigate = useNavigate()
@@ -56,19 +58,23 @@ const Home = () => {
             alert("Job description is required.")
             return
         }
-        const data = await generateReport({ jobDescription, selfDescription, resumeFile: selectedFile })
-        if (data && data._id) {
-            navigate(`/interview/${data._id}`)
+        setIsGenerating(true)
+        try {
+            const data = await generateReport({ jobDescription, selfDescription, resumeFile: selectedFile })
+            if (data && data._id) {
+                navigate(`/interview/${data._id}`)
+            }
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setIsGenerating(false)
         }
     }
 
     if (loading) {
-        return (
-            <main className='loading-screen'>
-                <h1>Loading your interview plan...</h1>
-            </main>
-        )
+        return <LoadingScreen isGenerating={isGenerating} />
     }
+
 
     return (
         <div className='home-page'>

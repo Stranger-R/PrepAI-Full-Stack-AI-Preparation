@@ -3,6 +3,7 @@ import '../style/interview.scss'
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate, useParams } from 'react-router'
 import { useAuth } from '../../auth/hooks/useAuth.js'
+import LoadingScreen from '../components/LoadingScreen.jsx'
 
 
 
@@ -74,11 +75,7 @@ const Interview = () => {
 
 
     if (loading || !report) {
-        return (
-            <main className='loading-screen'>
-                <h1>Loading your interview plan...</h1>
-            </main>
-        )
+        return <LoadingScreen isGenerating={false} />
     }
 
     const scoreColor =
