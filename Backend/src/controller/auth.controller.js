@@ -6,7 +6,7 @@ const emailService = require('../Services/email.service');
 const otpModel = require('../models/otp.model');
 const crypto = require('crypto');
 const sessionModel = require('../models/session.model');
-
+const redis = require("../config/A"); 
 const tokenBlackListModel = require('../models/blackList.model');
 
 // userRegister Controller 
@@ -68,11 +68,23 @@ async function userRegisterController(req, res) {
             .update(String(otp))
             .digest("hex");
 
-        await otpModel.create({
-            email,
-            user: user._id,
-            otpHash
-        });
+        // await otpModel.create({
+        //     email,
+        //     user: user._id,
+        //     otpHash
+        // });
+
+        await redis.set(
+            `otp:${email}`,
+            JSON.stringify({
+                userId: user._id.toString(),
+                otpHash
+            }),
+            {
+                ex: 300 // 5 minutes
+            }
+        );
+
 
         // Run email sending in background (don't await) so SMTP timeout doesn't hang the registration API
         emailService.sendEmail({
@@ -283,118 +295,241 @@ async function GetMeController(req, res) {
     }
 }
 
+
+// Old With MognoDB OTP Verify
+// async function verifyEmail(req, res) {
+//     try {
+
+//         const { email, otp } = req.body;
+
+//         if (!email || !otp) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Email and OTP are required"
+//             });
+//         }
+
+//         const otpHash = crypto
+//             .createHash("sha256")
+//             .update(String(otp))
+//             .digest("hex");
+
+
+//         const otpData = await otpModel.findOne({
+//             email,
+//             otpHash,
+//         });
+
+
+//         if (!otpData) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Invalid OTP"
+//             });
+//         }
+
+
+//         const user = await userModel.findByIdAndUpdate(
+//             otpData.user,
+//             {
+//                 verified: true,
+//             },
+//             {
+//                 returnDocument: 'after'
+//             }
+//         );
+
+
+//         if (!user) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "User not found"
+//             });
+//         }
+
+
+//         await otpModel.deleteMany({
+//             user: otpData.user
+//         });
+
+
+//         if (!process.env.JWT_SECRET) {
+//             return res.status(500).json({
+//                 message: "Server configuration error"
+//             });
+//         }
+
+
+//         const token = jwt.sign(
+//             {
+//                 user: user._id,
+//                 username: user.username
+//             },
+//             process.env.JWT_SECRET,
+//             {
+//                 expiresIn: "1d"
+//             }
+//         );
+
+
+//         await sessionModel.create({
+//             user: user._id,
+//             token,
+//             ip: req.ip,
+//             userAgent: req.headers["user-agent"]
+//         });
+
+
+//         res.cookie("token", token, {
+//             httpOnly: true,
+//             secure: true,
+//             sameSite: 'none',
+//             maxAge: 24 * 60 * 60 * 1000 // 1 day
+//         });
+
+
+//         return res.status(200).json({
+//             success: true,
+//             message: "Email verified successfully",
+//             token,
+//             user: {
+//                 _id: user._id,
+//                 username: user.username,
+//                 email: user.email
+//             }
+//         });
+
+
+//     } catch (error) {
+//         console.error("Verify email error:", error);
+
+//         return res.status(500).json({
+//             success: false,
+//             message: "Internal server error"
+//         });
+//     }
+// }
+
+// New With Redis
 async function verifyEmail(req, res) {
-    try {
+  try {
+    const { email, otp } = req.body;
 
-        const { email, otp } = req.body;
-
-        if (!email || !otp) {
-            return res.status(400).json({
-                success: false,
-                message: "Email and OTP are required"
-            });
-        }
-
-        const otpHash = crypto
-            .createHash("sha256")
-            .update(String(otp))
-            .digest("hex");
-
-
-        const otpData = await otpModel.findOne({
-            email,
-            otpHash,
-        });
-
-
-        if (!otpData) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid OTP"
-            });
-        }
-
-
-        const user = await userModel.findByIdAndUpdate(
-            otpData.user,
-            {
-                verified: true,
-            },
-            {
-                returnDocument: 'after'
-            }
-        );
-
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
-
-
-        await otpModel.deleteMany({
-            user: otpData.user
-        });
-
-
-        if (!process.env.JWT_SECRET) {
-            return res.status(500).json({
-                message: "Server configuration error"
-            });
-        }
-
-
-        const token = jwt.sign(
-            {
-                user: user._id,
-                username: user.username
-            },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: "1d"
-            }
-        );
-
-
-        await sessionModel.create({
-            user: user._id,
-            token,
-            ip: req.ip,
-            userAgent: req.headers["user-agent"]
-        });
-
-
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            maxAge: 24 * 60 * 60 * 1000 // 1 day
-        });
-
-
-        return res.status(200).json({
-            success: true,
-            message: "Email verified successfully",
-            token,
-            user: {
-                _id: user._id,
-                username: user.username,
-                email: user.email
-            }
-        });
-
-
-    } catch (error) {
-        console.error("Verify email error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error"
-        });
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and OTP are required",
+      });
     }
+
+    // Get OTP data from Redis
+    const redisData = await redis.get(`otp:${email}`);
+
+    if (!redisData) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired or invalid",
+      });
+    }
+
+    const otpData =
+      typeof redisData === "string"
+        ? JSON.parse(redisData)
+        : redisData;
+
+    // Hash incoming OTP
+    const otpHash = crypto
+      .createHash("sha256")
+      .update(String(otp))
+      .digest("hex");
+
+    // Compare hashes
+    if (otpData.otpHash !== otpHash) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    // Verify user
+    const user = await userModel.findByIdAndUpdate(
+      otpData.userId,
+      {
+        verified: true,
+      },
+      {
+        new: true,
+      }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Delete OTP from Redis after successful verification
+    await redis.del(`otp:${email}`);
+
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({
+        success: false,
+        message: "Server configuration error",
+      });
+    }
+
+    // Generate JWT
+    const token = jwt.sign(
+      {
+        user: user._id,
+        username: user.username,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    // Save session
+    await sessionModel.create({
+      user: user._id,
+      token,
+      ip: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+
+    // Set cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite:
+        process.env.NODE_ENV === "production"
+          ? "none"
+          : "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+      token,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error("Verify email error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
 }
+
 
 module.exports = {
 
