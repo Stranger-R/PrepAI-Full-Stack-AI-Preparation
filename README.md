@@ -5,7 +5,9 @@
 [![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-5.2-000000?logo=express&logoColor=white)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-9.7-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Upstash Redis](https://img.shields.io/badge/Upstash%20Redis-REST-red?logo=redis&logoColor=white)](https://upstash.com/)
 [![Groq AI](https://img.shields.io/badge/Groq%20AI-Llama%203.3-orange)](https://groq.com/)
+[![Resend](https://img.shields.io/badge/Resend-HTTP%20API-black)](https://resend.com/)
 [![Puppeteer](https://img.shields.io/badge/Puppeteer-25.1-40B5A4?logo=puppeteer&logoColor=white)](https://pptr.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -25,6 +27,7 @@ graph TD
     classDef ai fill:#339933,stroke:#333,stroke-width:2px,color:#fff;
     classDef storage fill:#47A248,stroke:#333,stroke-width:2px,color:#fff;
     classDef browser fill:#40B5A4,stroke:#333,stroke-width:2px,color:#fff;
+    classDef cache fill:#D82C20,stroke:#333,stroke-width:2px,color:#fff;
 
     %% Components
     A[React Client / Vite]:::client
@@ -32,7 +35,9 @@ graph TD
     C[Mongoose / MongoDB]:::storage
     D[Groq API / Llama-3.3-70B]:::ai
     E[Puppeteer Headless Chrome]:::browser
-    F[Nodemailer SMTP]:::gateway
+    F[Nodemailer SMTP Fallback]:::gateway
+    G[Resend HTTP API]:::gateway
+    R[(Upstash Redis OTP Cache)]:::cache
 
     %% Flows
     A -- 1. Upload Resume PDF & JD --> B
@@ -46,7 +51,9 @@ graph TD
     B -- 9. Stream HTML to PDF --> E
     E -- 10. Pipe binary buffer (PDF) --> B
     B -- 11. File Download (Attachment) --> A
-    B -- Send OTP Verification --> F
+    B -- 12a. Store OTP (5m TTL) / Validate --> R
+    B -- 12b. Dispatch Email via Resend / SMTP fallback --> G
+    B -- 12c. Dispatch Email (Alternative) --> F
 ```
 
 ---
@@ -65,7 +72,8 @@ Rather than relying on client-side canvas engines (which suffer from scaling and
 ### 3. Session-Hardened Multi-Factor Auth Flow
 *   **Token Protection**: JWTs are signed and stored in HTTP-Only cookies with sameSite policies (`lax` in development, `none` in production) preventing Cross-Site Scripting (XSS) and Cross-Site Request Forgery (CSRF).
 *   **Session Database Tracking**: Active user sessions are tracked in a dedicated MongoDB collection mapping tokens to specific client signatures (IP, user-agent), allowing for instantaneous multi-device logout and token-revocation checks.
-*   **OTP Verification**: Double-hashed (`SHA-256`) OTP verify codes mapped to short-lived database lifecycles to prevent database dictionary attacks.
+*   **Redis-Backed OTP Verification**: Employs **Upstash Redis** to cache short-lived, double-hashed (`SHA-256`) verification codes with a strict 5-minute time-to-live (TTL). This high-performance setup guarantees secure email verification while protecting the primary MongoDB database from transient state bloat and brute-force lookup overhead.
+*   **Dual-Engine Email Dispatch**: Features a resilient email notification module utilizing the **Resend HTTP API** as the primary vehicle (effectively bypassing outbound SMTP blocks on platforms like Render) with a robust **Nodemailer SMTP** OAuth2 implementation as a fallback.
 
 ---
 
@@ -112,21 +120,29 @@ npm run setup
 ### Environment Settings
 
 #### 1. Backend Config
-Create [Backend/.env](file:///c:/Users/OM/OneDrive/Desktop/Backend/sample/Backend/.env):
+Create [Backend/.env](file:///c:/Users/OM/OneDrive/Desktop/SDE/PrepAI-Full-Stack-AI-Preparation/Backend/.env):
 ```env
 MONGO_URL="mongodb+srv://<user>:<password>@cluster.mongodb.net/database"
 JWT_SECRET="generate-a-strong-jwt-secret-string"
 GROQ_GENAI_API_KEY="gsk_your_groq_api_credential_here"
 
-# Mail verification
+# Mail verification (Resend HTTP API - Primary)
+RESEND_API_KEY="re_your_resend_api_key_here"
+EMAIL_FROM="onboarding@resend.dev" # Optional, defaults to onboarding@resend.dev
+
+# Mail verification (Nodemailer SMTP - Fallback)
 GOOGLE_USER="your-app-email@gmail.com"
 GOOGLE_REFRESH_TOKEN="oauth2-refresh-token"
 GOOGLE_CLIENT_ID="oauth2-client-id"
 GOOGLE_CLIENT_SECRET="oauth2-client-secret"
+
+# Redis Configuration (Upstash Redis REST client)
+UPSTASH_REDIS_REST_URL="https://your-upstash-redis-rest-url.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="your_upstash_redis_rest_token_here"
 ```
 
 #### 2. Frontend Config
-Create [Frontend/.env](file:///c:/Users/OM/OneDrive/Desktop/Backend/sample/Frontend/.env):
+Create [Frontend/.env](file:///c:/Users/OM/OneDrive/Desktop/SDE/PrepAI-Full-Stack-AI-Preparation/Frontend/.env):
 ```env
 VITE_API_BASE_URL="http://localhost:5000"
 ```
@@ -154,5 +170,5 @@ Use these highly descriptive, metric-focused statements on your resume to articu
 *   **Architected and developed a full-stack, distributed AI-powered platform** utilizing React 19, Vite, and Express, optimizing state synchronization using custom React Context wrappers and declarative routing layers.
 *   **Engineered prompt topologies and integrated Groq SDK (Llama 3.3 70B)**, utilizing strict `Zod` schemas translated to raw JSON templates to guarantee 100% deterministic AI responses, reducing API parsing failures to 0%.
 *   **Designed and implemented an automated PDF rendering engine** leveraging headless Chrome (Puppeteer) server-side print processes, optimizing page-break scripts and layout templates to deliver responsive, dynamic, ATS-friendly resume exports.
-*   **Hardened system security postures** by implementing multi-tiered session tracking, secure HTTP-Only cookie injection with sameSite policies to mitigate XSS/CSRF vectors, and OAuth2-backed OTP email confirmation pipelines.
-*   **Designed data persistence architectures** in MongoDB using Mongoose schemas for token blacklisting, dynamic user states, OTP TTL validation, and multi-signature session logging.
+*   **Hardened system security postures** by implementing multi-tiered session tracking, secure HTTP-Only cookie injection with sameSite policies to mitigate XSS/CSRF vectors, and a high-performance **Upstash Redis-backed OTP caching layer** (5-minute TTL) coupled with **Resend HTTP API** and OAuth2 SMTP email dispatch systems.
+*   **Designed data persistence and caching architectures** using MongoDB/Mongoose for token blacklisting, dynamic user states, and session logging, integrated with **Upstash Redis** for secure ephemeral storage of verification keys to eliminate database state bloat and reduce retrieval latency.
