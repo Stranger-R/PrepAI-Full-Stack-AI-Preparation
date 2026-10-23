@@ -1,10 +1,28 @@
 const nodemailer = require("nodemailer");
 const axios = require("axios");
 
-// Create SMTP transporter as fallback
+// Create SMTP transporter as fallback or primary sender
 let transporter;
 try {
-  if (process.env.GOOGLE_USER && process.env.GOOGLE_REFRESH_TOKEN) {
+  if (process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD) {
+    // 1. Direct Gmail App Password (most reliable, sends to any recipient)
+    transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER || process.env.GOOGLE_USER,
+        pass: process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD,
+      },
+    });
+
+    transporter.verify((error) => {
+      if (error) {
+        console.warn("Gmail App Password SMTP Verification Warning:", error.message);
+      } else {
+        console.log("✓ Gmail App Password SMTP transporter is ready");
+      }
+    });
+  } else if (process.env.GOOGLE_USER && process.env.GOOGLE_REFRESH_TOKEN) {
+    // 2. Google OAuth2
     transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 587,
@@ -18,11 +36,11 @@ try {
       },
     });
 
-    transporter.verify((error, success) => {
+    transporter.verify((error) => {
       if (error) {
-        console.warn("SMTP Verification Warning (can be ignored if using Resend):", error.message);
+        console.warn("SMTP Verification Warning (can be ignored if using Resend or App Password):", error.message);
       } else {
-        console.log("SMTP fallback transporter is ready");
+        console.log("✓ SMTP fallback transporter is ready");
       }
     });
   }
@@ -51,31 +69,31 @@ async function sendEmail({ to, subject, html, text }) {
       console.log("Email sent successfully via Resend HTTP API. ID:", response.data.id);
       return;
     } catch (error) {
-      console.error("Resend HTTP Email send failed:", error.response?.data || error.message);
-      return;
+      console.warn("Resend HTTP Email send failed, attempting SMTP fallback:", error.response?.data?.message || error.message);
     }
   }
 
   // 2. Fallback to Nodemailer SMTP
   if (transporter) {
     try {
+      const fromAddress = process.env.EMAIL_USER || process.env.GOOGLE_USER;
       const info = await transporter.sendMail({
-        from: `"PrepAI" <${process.env.GOOGLE_USER}>`,
+        from: `"PrepAI" <${fromAddress}>`,
         to,
         subject,
         text,
         html,
       });
 
-      console.log("Email sent via SMTP:", info.messageId);
+      console.log("Email sent successfully via SMTP. MessageId:", info.messageId);
+      return;
     } catch (error) {
-      console.error("SMTP Email send failed:", error.message);
+      console.warn("SMTP Email send failed:", error.message);
     }
-  } else {
-    console.error("No email service configured. Please provide RESEND_API_KEY or GOOGLE SMTP credentials.");
   }
-}
 
+  console.warn(`[EMAIL NOTICE] Real email could not be delivered to ${to} (Resend free sandbox only delivers to registered account email; SMTP requires Gmail App Password). Use the logged OTP to verify.`);
+}
 
 module.exports = {
     sendEmail

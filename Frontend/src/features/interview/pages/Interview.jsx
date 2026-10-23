@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import '../style/interview.scss'
 import { useInterview } from '../hooks/useInterview.js'
 import { useNavigate, useParams } from 'react-router'
@@ -61,21 +61,23 @@ const RoadMapDay = ({ day }) => (
 // ── Main Component ────────────────────────────────────────────────────────────
 const Interview = () => {
     const [activeNav, setActiveNav] = useState('technical')
-    const { report, getReportById, loading, getResumePdf } = useInterview()
+    const { report, loading, getResumePdf } = useInterview()
     const { interviewId } = useParams()
     const navigate = useNavigate()
     const { handleLogout } = useAuth()
 
-    useEffect(() => {
-        if (interviewId) {
-            getReportById(interviewId)
-        }
-    }, [interviewId])
-
-
-
-    if (loading || !report) {
+    if (loading) {
         return <LoadingScreen isGenerating={false} />
+    }
+
+    if (!report) {
+        return (
+            <div className='interview-page' style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', textAlign: 'center', color: '#fff', padding: '2rem' }}>
+                <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>Interview Report Not Found</h2>
+                <p style={{ color: '#94a3b8', margin: '0.5rem 0 1.5rem', maxWidth: '400px' }}>The requested interview preparation plan may have been deleted or is inaccessible.</p>
+                <button className='button primary-button' onClick={() => navigate('/')}>Return to Dashboard</button>
+            </div>
+        )
     }
 
     const scoreColor =

@@ -3,7 +3,15 @@ import axios from "axios";
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000",
     withCredentials: true,
-})
+});
+
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("prepai_token");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
 
 
 /**
@@ -57,3 +65,12 @@ export const generateResumePdf = async ({ interviewReportId }) => {
 
     return response.data
 }
+
+
+/**
+ * @description Service to delete an interview report by interviewId.
+ */
+export const deleteInterviewReport = async (interviewId) => {
+    const response = await api.delete(`/api/interview/${interviewId}`)
+    return response.data
+}

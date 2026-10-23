@@ -16,9 +16,9 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError("")
-                const res = await handleRegister({ username, email, password })
+        const res = await handleRegister({ username, email, password })
         if (res?.success) {
-            navigate("/verify-email", { state: { email } })
+            navigate("/verify-email", { state: { email, devOtp: res.data?.devOtp } })
         } else {
             setError(res?.error || "Registration failed")
         }

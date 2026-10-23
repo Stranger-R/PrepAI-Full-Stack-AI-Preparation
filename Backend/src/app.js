@@ -29,12 +29,16 @@ app.use(cookieParser())
 
 const authRouter = require('./routes/auth.routes');
 const interviewRouter = require('./routes/interview.routes');
+const jobRouter = require('./routes/job.routes');
 
 app.use('/api/auth', authRouter)
 
 app.use('/api/interview', interviewRouter)
 
+app.use('/api/jobs', jobRouter)
+
 
 
 
 module.exports = app;
+

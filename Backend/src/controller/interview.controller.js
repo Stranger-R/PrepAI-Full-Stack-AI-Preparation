@@ -89,26 +89,62 @@ async function getAllInterviewReportsController(req, res) {
  * @description Controller to generate resume PDF based on user self description, resume and job description.
  */
 async function generateResumePdfController(req, res) {
-    const { interviewReportId } = req.params
+    try {
+        const { interviewReportId } = req.params;
 
-    const interviewReport = await InterviewReportModel.findById(interviewReportId)
+        const interviewReport = await InterviewReportModel.findById(interviewReportId);
 
-    if (!interviewReport) {
-        return res.status(404).json({
-            message: "Interview report not found."
-        })
+        if (!interviewReport) {
+            return res.status(404).json({
+                message: "Interview report not found."
+            });
+        }
+
+        const { resume, jobDescription, selfDescription } = interviewReport;
+
+        const pdfBuffer = await generateResumePdf({ resume, jobDescription, selfDescription });
+
+        res.set({
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename=resume_${interviewReportId}.pdf`
+        });
+
+        res.send(pdfBuffer);
+    } catch (error) {
+        console.error("Generate Resume PDF Error:", error);
+        return res.status(500).json({
+            message: "Failed to generate resume PDF. Please try again.",
+            error: error.message
+        });
     }
+}
 
-    const { resume, jobDescription, selfDescription } = interviewReport
+/**
+ * @description Controller to delete an interview report by ID for logged in user.
+ */
+async function deleteInterviewReportController(req, res) {
+    try {
+        const { interviewId } = req.params;
 
-    const pdfBuffer = await generateResumePdf({ resume, jobDescription, selfDescription })
+        const deletedReport = await InterviewReportModel.findOneAndDelete({ _id: interviewId, user: req.user.id });
 
-    res.set({
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename=resume_${interviewReportId}.pdf`
-    })
+        if (!deletedReport) {
+            return res.status(404).json({
+                message: "Interview report not found or unauthorized to delete."
+            });
+        }
 
-    res.send(pdfBuffer)
+        return res.status(200).json({
+            message: "Interview report deleted successfully.",
+            interviewId
+        });
+    } catch (error) {
+        console.error("Delete Interview Report Error:", error);
+        return res.status(500).json({
+            message: "Failed to delete interview report.",
+            error: error.message
+        });
+    }
 }
 
 
@@ -116,5 +152,6 @@ module.exports = {
     generateInterviewReportController,
     getInterviewReportByIdController, 
     getAllInterviewReportsController, 
-    generateResumePdfController
- };
+    generateResumePdfController,
+    deleteInterviewReportController
+ };

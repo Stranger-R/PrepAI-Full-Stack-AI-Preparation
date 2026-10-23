@@ -1,19 +1,19 @@
 @use "sass:color";
 
-// ── Variables ────────────────────────────────────────────────────────────────
-$bg-page: #0d1117;
-$bg-card: #161b22;
-$bg-panel: #1c2230;
-$bg-input: #1e2535;
-$border-color: #2a3348;
-$text-primary: #e6edf3;
-$text-muted: #7d8590;
-$accent: #ff2d78;
-$accent-alt: #ff6b9d;
-$badge-required: #ff2d78;
-$badge-best: #ff2d78;
-$info-bg: #1b2a4a;
-$info-border: #2d4a7a;
+// ── Variables (White + Light Green Theme) ─────────────────────────────────────
+$bg-page: #f0faf4;
+$bg-card: #ffffff;
+$bg-panel: #f4fbf7;
+$bg-input: #f8fdfb;
+$border-color: #c6e8d3;
+$text-primary: #0f2318;
+$text-muted: #5a7a67;
+$accent: #16a34a;
+$accent-alt: #22c55e;
+$badge-required: #16a34a;
+$badge-best: #16a34a;
+$info-bg: #e8f5ee;
+$info-border: #a7d7b8;
 $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
 // ── Page Shell ───────────────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
     }
 
     &:hover {
-        background-color: rgba($accent, 0.1);
+        background-color: rgba($accent, 0.08);
         border-color: $accent;
         color: $accent;
 
@@ -403,9 +403,9 @@ $font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, s
 }
 
 // severity palette
-$severity-high: #ff4d4d;
-$severity-medium: #f5a623;
-$severity-low: #3fb950;
+$severity-high: #dc2626;
+$severity-medium: #d97706;
+$severity-low: #16a34a;
 
 .recent-reports {
     display: flex;

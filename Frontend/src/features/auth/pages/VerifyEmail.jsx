@@ -70,6 +70,37 @@ const VerifyEmail = () => {
                     <p>Enter the 6-digit verification code sent to your email</p>
                 </div>
 
+                {location.state?.devOtp && (
+                    <div style={{
+                        backgroundColor: "rgba(59, 130, 246, 0.15)",
+                        border: "1px solid rgba(59, 130, 246, 0.3)",
+                        color: "#60a5fa",
+                        padding: "0.6rem 0.8rem",
+                        borderRadius: "0.5rem",
+                        marginBottom: "1rem",
+                        fontSize: "0.85rem",
+                        textAlign: "center"
+                    }}>
+                        <span>Dev OTP: <strong>{location.state.devOtp}</strong></span>
+                        <button
+                            type="button"
+                            onClick={() => setOtp(location.state.devOtp)}
+                            style={{
+                                marginLeft: "10px",
+                                background: "#3b82f6",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "4px",
+                                padding: "2px 8px",
+                                cursor: "pointer",
+                                fontSize: "0.8rem"
+                            }}
+                        >
+                            Auto-fill
+                        </button>
+                    </div>
+                )}
+
                 {error && <div className="error-container">{error}</div>}
                 {successMsg && <div className="success-container" style={{
                     backgroundColor: "rgba(16, 185, 129, 0.15)",

@@ -1,26 +1,48 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview.js'
-import { useNavigate } from 'react-router'
+import { useNavigate, useLocation } from 'react-router'
 import { useAuth } from '../../auth/hooks/useAuth.js'
 import LoadingScreen from '../components/LoadingScreen.jsx'
 
 const Home = () => {
 
     const { user, handleLogout } = useAuth()
-    const { loading, generateReport, reports } = useInterview()
+    const { loading, generateReport, reports, deleteReport } = useInterview()
+
+    const handleDeletePlan = async (e, reportId) => {
+        e.stopPropagation()
+        if (window.confirm("Are you sure you want to delete this interview plan?")) {
+            await deleteReport(reportId)
+        }
+    }
+
+    const location = useLocation()
     const [jobDescription, setJobDescription] = useState("")
     const [selfDescription, setSelfDescription] = useState("")
     const [selectedFile, setSelectedFile] = useState(null)
+    const [resumeAutoDetected, setResumeAutoDetected] = useState(false)
     const [dragActive, setDragActive] = useState(false)
     const [isGenerating, setIsGenerating] = useState(false)
     const resumeInputRef = useRef()
 
     const navigate = useNavigate()
 
+    useEffect(() => {
+        if (location.state?.prefilledJobDesc) {
+            setJobDescription(location.state.prefilledJobDesc)
+        }
+        const resumeFile = location.state?.resumeFile
+        if (resumeFile?.name && typeof resumeFile.size === 'number') {
+            setSelectedFile(resumeFile)
+            setResumeAutoDetected(Boolean(location.state?.resumeAutoDetected))
+        }
+    }, [location.state])
+
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
             setSelectedFile(e.target.files[0])
+            setResumeAutoDetected(false)
         }
     }
 
@@ -43,6 +65,7 @@ const Home = () => {
             const ext = file.name.split('.').pop().toLowerCase()
             if (ext === 'pdf' || ext === 'docx') {
                 setSelectedFile(file)
+                setResumeAutoDetected(false)
             } else {
                 alert("Only PDF or DOCX files are allowed.")
             }
@@ -85,6 +108,12 @@ const Home = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg>
                     <span>PrepAI</span>
                 </div>
+
+                <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                    <span style={{ color: '#ff2d78', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }} onClick={() => navigate('/')}>Interview Plans</span>
+                    <span style={{ color: '#7d8590', fontWeight: 500, fontSize: '0.9rem', cursor: 'pointer' }} onClick={() => navigate('/jobs')}>Market Jobs</span>
+                </div>
+
                 <div className='top-nav__actions'>
                     {user && <span className='top-nav__user'>Welcome, {user.username || user.email}</span>}
                     <button onClick={handleLogout} className='logout-btn'>
@@ -114,13 +143,15 @@ const Home = () => {
                             <span className='badge badge--required'>Required</span>
                         </div>
                         <textarea
+                            value={jobDescription}
                             onChange={(e) => { setJobDescription(e.target.value) }}
                             className='panel__textarea'
                             placeholder={`Paste the full job description here...\ne.g. 'Senior Frontend Engineer at Google requires proficiency in React, TypeScript, and large-scale system design...'`}
                             maxLength={5000}
                         />
-                        <div className='char-counter'>0 / 5000 chars</div>
+                        <div className='char-counter'>{jobDescription.length} / 5000 chars</div>
                     </div>
+
 
                     {/* Vertical Divider */}
                     <div className='panel-divider' />
@@ -154,7 +185,9 @@ const Home = () => {
                                             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                         </span>
                                         <p className='dropzone__title'>{selectedFile.name}</p>
-                                        <p className='dropzone__subtitle'>{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Click to change</p>
+                                        <p className='dropzone__subtitle'>
+                                            {resumeAutoDetected ? 'Detected from Market Jobs • Click to change' : `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Click to change`}
+                                        </p>
                                     </>
                                 ) : (
                                     <>
@@ -213,7 +246,25 @@ const Home = () => {
                     <ul className='reports-list'>
                         {reports.map(report => (
                             <li key={report._id} className='report-item' onClick={() => navigate(`/interview/${report._id}`)}>
-                                <h3>{report.title || 'Untitled Position'}</h3>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <h3>{report.title || 'Untitled Position'}</h3>
+                                    <button
+                                        className='delete-plan-btn'
+                                        title='Delete Interview Plan'
+                                        onClick={(e) => handleDeletePlan(e, report._id)}
+                                        style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: '#7d8590',
+                                            cursor: 'pointer',
+                                            padding: '0.2rem',
+                                            borderRadius: '0.25rem',
+                                            transition: 'color 0.2s'
+                                        }}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                    </button>
+                                </div>
                                 <p className='report-meta'>
                                     Generated on {new Date(report.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                                 </p>
@@ -225,6 +276,7 @@ const Home = () => {
                     </ul>
                 </section>
             )}
+
 
             {/* Page Footer */}
             <footer className='page-footer'>

@@ -6,7 +6,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #0b0b0c;
+    background-color: #f0faf4;
     padding: 2rem;
 
     // Glowing background orbs
@@ -21,7 +21,7 @@
         &.orb-pink {
             width: 400px;
             height: 400px;
-            background: radial-gradient(circle, rgba(225, 3, 77, 0.25) 0%, rgba(225, 3, 77, 0) 70%);
+            background: radial-gradient(circle, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0) 70%);
             top: -100px;
             left: -100px;
             animation: drift 20s infinite alternate ease-in-out;
@@ -30,7 +30,7 @@
         &.orb-blue {
             width: 500px;
             height: 500px;
-            background: radial-gradient(circle, rgba(13, 110, 253, 0.2) 0%, rgba(13, 110, 253, 0) 70%);
+            background: radial-gradient(circle, rgba(134, 239, 172, 0.28) 0%, rgba(134, 239, 172, 0) 70%);
             bottom: -150px;
             right: -100px;
             animation: drift 25s infinite alternate-reverse ease-in-out;
@@ -39,7 +39,7 @@
         &.orb-purple {
             width: 350px;
             height: 350px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0) 70%);
+            background: radial-gradient(circle, rgba(187, 247, 208, 0.35) 0%, rgba(187, 247, 208, 0) 70%);
             top: 40%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -52,16 +52,16 @@
         max-width: 440px;
         position: relative;
         z-index: 2;
-        background: linear-gradient(135deg, rgba(25, 25, 28, 0.75) 0%, rgba(15, 15, 17, 0.9) 100%);
+        background: rgba(255, 255, 255, 0.94);
         backdrop-filter: blur(20px) saturate(180%);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid #c6e8d3;
         border-radius: 1.5rem;
         padding: 3rem 2.5rem;
         box-shadow: 
-            0 4px 30px rgba(0, 0, 0, 0.4),
-            0 1px 0 rgba(255, 255, 255, 0.1) inset,
-            0 0 100px rgba(225, 3, 77, 0.05);
+            0 12px 36px rgba(15, 35, 24, 0.1),
+            0 1px 0 rgba(255, 255, 255, 0.8) inset,
+            0 0 100px rgba(34, 197, 94, 0.06);
         animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 
         .auth-header {
@@ -72,14 +72,14 @@
                 font-size: 2.25rem;
                 font-weight: 800;
                 margin-bottom: 0.5rem;
-                background: linear-gradient(135deg, #ffffff 30%, #a1a1aa 100%);
+                background: linear-gradient(135deg, #0f2318 30%, #5a7a67 100%);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
                 letter-spacing: -0.025em;
             }
 
             p {
-                color: #71717a;
+                color: #5a7a67;
                 font-size: 0.925rem;
             }
         }
@@ -114,43 +114,43 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: #a1a1aa;
+            color: #5a7a67;
             transition: color 0.2s ease;
         }
 
         input {
             width: 100%;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #f8fdfb;
+            border: 1px solid #c6e8d3;
             outline: none;
             padding: 0.875rem 1.25rem;
             border-radius: 0.875rem;
-            color: #ffffff;
+            color: #0f2318;
             font-size: 0.95rem;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) inset;
 
             &::placeholder {
-                color: #52525b;
+                color: #789084;
             }
 
             &:hover {
-                background: rgba(255, 255, 255, 0.05);
-                border-color: rgba(255, 255, 255, 0.15);
+                background: #f0faf4;
+                border-color: #a7d7b8;
             }
 
             &:focus {
-                background: rgba(255, 255, 255, 0.06);
-                border-color: #e1034d;
+                background: #ffffff;
+                border-color: #16a34a;
                 box-shadow: 
-                    0 0 0 3px rgba(225, 3, 77, 0.15),
-                    0 2px 8px rgba(225, 3, 77, 0.1) inset;
+                    0 0 0 3px rgba(22, 163, 74, 0.15),
+                    0 2px 8px rgba(22, 163, 74, 0.08) inset;
             }
         }
 
         &:focus-within {
             label {
-                color: #e1034d;
+                color: #16803b;
             }
         }
     }
@@ -159,10 +159,10 @@
         margin-top: 2rem;
         text-align: center;
         font-size: 0.9rem;
-        color: #71717a;
+        color: #5a7a67;
 
         a {
-            color: #e1034d;
+            color: #16803b;
             font-weight: 500;
             text-decoration: none;
             position: relative;
@@ -177,13 +177,13 @@
                 height: 1.5px;
                 bottom: 0;
                 left: 0;
-                background-color: #e1034d;
+                background-color: #16803b;
                 transform-origin: bottom right;
                 transition: transform 0.25s ease-out;
             }
 
             &:hover {
-                color: #ff276f;
+                color: #16a34a;
                 &::after {
                     transform: scaleX(1);
                     transform-origin: bottom left;
@@ -194,14 +194,14 @@
 
     button.primary-button {
         width: 100%;
-        background: linear-gradient(135deg, #e1034d 0%, #a20235 100%);
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
         border: none;
         border-radius: 0.875rem;
         padding: 0.875rem 1.5rem;
         font-weight: 600;
         font-size: 1.05rem;
         color: white;
-        box-shadow: 0 4px 15px rgba(225, 3, 77, 0.35);
+        box-shadow: 0 4px 15px rgba(22, 163, 74, 0.25);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         justify-content: center;
@@ -211,8 +211,8 @@
 
         &:hover {
             transform: translateY(-2px);
-            background: linear-gradient(135deg, #ff1a66 0%, #be033f 100%);
-            box-shadow: 0 6px 20px rgba(225, 3, 77, 0.5);
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            box-shadow: 0 6px 20px rgba(22, 163, 74, 0.32);
         }
 
         &:active {
@@ -265,7 +265,7 @@
     padding: 2rem;
 
     p {
-        color: #a1a1aa;
+        color: #5a7a67;
         font-weight: 500;
         font-size: 0.95rem;
         animation: pulse-glow 1.5s infinite alternate ease-in-out;
@@ -275,11 +275,11 @@
 .spinner {
     width: 48px;
     height: 48px;
-    border: 3px solid rgba(225, 3, 77, 0.1);
+    border: 3px solid rgba(22, 163, 74, 0.15);
     border-radius: 50%;
-    border-top-color: #e1034d;
+    border-top-color: #16a34a;
     animation: spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
-    box-shadow: 0 0 15px rgba(225, 3, 77, 0.2);
+    box-shadow: 0 0 15px rgba(22, 163, 74, 0.2);
 }
 
 @keyframes spin {

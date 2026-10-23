@@ -5,6 +5,7 @@ import VerifyEmail from "./features/auth/pages/VerifyEmail";
 import Protected from "./features/auth/components/Protected";
 import Home from "./features/interview/pages/Home";
 import Interview from "./features/interview/pages/Interview";
+import MarketJobs from "./features/jobs/pages/MarketJobs";
 
 
 export const router = createBrowserRouter([
@@ -25,7 +26,11 @@ export const router = createBrowserRouter([
         element: <Protected><Home /></Protected>
     },
     {
+        path: "/jobs",
+        element: <Protected><MarketJobs /></Protected>
+    },
+    {
         path:"/interview/:interviewId",
         element: <Protected><Interview /></Protected>
     }
-])
+])

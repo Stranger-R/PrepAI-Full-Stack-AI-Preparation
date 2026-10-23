@@ -9,6 +9,27 @@ const sessionModel = require('../models/session.model');
 const redis = require("../config/A"); 
 const tokenBlackListModel = require('../models/blackList.model');
 
+const getCookieOptions = () => {
+    const isProduction = process.env.NODE_ENV === "production";
+    return {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        maxAge: 24 * 60 * 60 * 1000,
+        path: "/"
+    };
+};
+
+const getClearCookieOptions = () => {
+    const isProduction = process.env.NODE_ENV === "production";
+    return {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        path: "/"
+    };
+};
+
 // userRegister Controller 
 //  /api/auth/register, POST
 
@@ -68,22 +89,29 @@ async function userRegisterController(req, res) {
             .update(String(otp))
             .digest("hex");
 
-        // await otpModel.create({
-        //     email,
-        //     user: user._id,
-        //     otpHash
-        // });
+        // Resilient OTP storage: store in Redis if available, with automatic MongoDB fallback
+        try {
+            await redis.set(
+                `otp:${email}`,
+                JSON.stringify({
+                    userId: user._id.toString(),
+                    otpHash
+                }),
+                {
+                    ex: 300 // 5 minutes
+                }
+            );
+        } catch (redisErr) {
+            console.warn(`[Redis Notice] Upstash Redis OTP store failed (${redisErr.message}). Using MongoDB OTP storage fallback.`);
+        }
 
-        await redis.set(
-            `otp:${email}`,
-            JSON.stringify({
-                userId: user._id.toString(),
-                otpHash
-            }),
-            {
-                ex: 300 // 5 minutes
-            }
-        );
+        // Always also record in MongoDB OTP collection for seamless reliability
+        await otpModel.deleteMany({ email });
+        await otpModel.create({
+            email,
+            user: user._id,
+            otpHash
+        });
 
 
         // Run email sending in background (don't await) so SMTP timeout doesn't hang the registration API
@@ -96,7 +124,7 @@ async function userRegisterController(req, res) {
         return res.status(201).json({
             success: true,
             message: "Registration successful. Please verify your email.",
-            // accessToken,
+            devOtp: process.env.NODE_ENV !== "production" ? otp : undefined,
             user: {
                 _id: user._id,
                 username: user.username,
@@ -199,13 +227,8 @@ async function userLoginController(req, res) {
             userAgent: req.headers["user-agent"]
         });
 
-        // Set cookie with cross-origin support (sameSite: none, secure: true)
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            maxAge: 24 * 60 * 60 * 1000 // 1 day
-        });
+        // Set unified cookie
+        res.cookie("token", token, getCookieOptions());
 
         return res.status(200).json({
             message: "User LoggedIn Successfully",
@@ -236,11 +259,7 @@ async function userLogoutController(req, res) {
             });
         }
 
-        res.clearCookie('token', {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none'
-        });
+        res.clearCookie('token', getClearCookieOptions());
 
         await tokenBlackListModel.create({
             token : token
@@ -422,20 +441,16 @@ async function verifyEmail(req, res) {
       });
     }
 
-    // Get OTP data from Redis
-    const redisData = await redis.get(`otp:${email}`);
-
-    if (!redisData) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP expired or invalid",
-      });
+    // Try Redis first, then fallback to MongoDB OTP collection
+    let otpData = null;
+    try {
+      const redisData = await redis.get(`otp:${email}`);
+      if (redisData) {
+        otpData = typeof redisData === "string" ? JSON.parse(redisData) : redisData;
+      }
+    } catch (redisErr) {
+      console.warn(`[Redis Notice] Upstash Redis lookup failed (${redisErr.message}). Falling back to MongoDB.`);
     }
-
-    const otpData =
-      typeof redisData === "string"
-        ? JSON.parse(redisData)
-        : redisData;
 
     // Hash incoming OTP
     const otpHash = crypto
@@ -443,22 +458,36 @@ async function verifyEmail(req, res) {
       .update(String(otp))
       .digest("hex");
 
-    // Compare hashes
-    if (otpData.otpHash !== otpHash) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid OTP",
-      });
+    let userId = null;
+
+    if (otpData) {
+      if (otpData.otpHash !== otpHash) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid OTP",
+        });
+      }
+      userId = otpData.userId;
+    } else {
+      // Fallback: check MongoDB otpModel
+      const mongoOtp = await otpModel.findOne({ email, otpHash });
+      if (!mongoOtp) {
+        return res.status(400).json({
+          success: false,
+          message: "OTP expired or invalid",
+        });
+      }
+      userId = mongoOtp.user;
     }
 
     // Verify user
     const user = await userModel.findByIdAndUpdate(
-      otpData.userId,
+      userId,
       {
         verified: true,
       },
       {
-        new: true,
+        returnDocument: 'after',
       }
     );
 
@@ -469,8 +498,11 @@ async function verifyEmail(req, res) {
       });
     }
 
-    // Delete OTP from Redis after successful verification
-    await redis.del(`otp:${email}`);
+    // Cleanup OTPs from both stores
+    try {
+      await redis.del(`otp:${email}`);
+    } catch (_) {}
+    await otpModel.deleteMany({ email });
 
     if (!process.env.JWT_SECRET) {
       return res.status(500).json({
@@ -499,16 +531,8 @@ async function verifyEmail(req, res) {
       userAgent: req.headers["user-agent"],
     });
 
-    // Set cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? "none"
-          : "lax",
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+    // Set unified cookie
+    res.cookie("token", token, getCookieOptions());
 
     return res.status(200).json({
       success: true,
